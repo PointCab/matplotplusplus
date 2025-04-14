@@ -224,6 +224,7 @@ if (MATPLOTPP_BUILD_EXPERIMENTAL_OPENGL_BACKEND)
         # find_package(GLAD REQUIRE) would suffice if it worked well
         FetchContent_Declare(glad GIT_REPOSITORY https://github.com/Dav1dde/glad.git GIT_TAG v0.1.36)
         FetchContent_MakeAvailable(glad)
+	set (CREATE_GLAD_INSTALL_CONFIG TRUE)
     endif()
     if(TARGET glad AND NOT TARGET glad::glad)
         # Alias glad to glad::glad
@@ -255,6 +256,44 @@ if (MATPLOTPP_BUILD_EXPERIMENTAL_OPENGL_BACKEND)
     target_link_libraries(matplot_opengl PUBLIC matplot glad::glad glfw ${CMAKE_DL_LIBS})
 
     list(APPEND TARGETS matplot_opengl)
+endif()
+
+#######################################################
+### install configuration for glad                  ###
+#######################################################
+if(CREATE_GLAD_INSTALL_CONFIG AND EXISTS "${glad_SOURCE_DIR}/Config.cmake.in")
+    set(GLAD_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/glad)
+
+    # install glad libraries
+    install(TARGETS glad
+            EXPORT GladTargets
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+        
+    set (glad_BUILD_DIR ${glad_SOURCE_DIR}/../glad-build)
+    install(DIRECTORY ${glad_BUILD_DIR}/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    set(targets_export_name glad-targets)
+
+    # Install glad's generated target CMake config
+    install(EXPORT GladTargets
+            FILE glad-targets.cmake
+            NAMESPACE glad::
+            DESTINATION ${GLAD_INSTALL_CMAKEDIR})
+
+    # configure GLAD's Config.cmake.in
+    configure_package_config_file(
+        "${glad_SOURCE_DIR}/Config.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/GladConfig.cmake"
+        INSTALL_DESTINATION ${GLAD_INSTALL_CMAKEDIR}
+    )
+
+    # Install cmake script
+    install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/GladConfig.cmake"
+        DESTINATION ${GLAD_INSTALL_CMAKEDIR})
 endif()
 
 #######################################################
